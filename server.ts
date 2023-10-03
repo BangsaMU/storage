@@ -1,9 +1,10 @@
-import express, { Application } from "express";
+import express, {Request, Response, Application, NextFunction } from "express";
 import Server from "./src/index";
 
 const app: Application = express();
 const server: Server = new Server(app);
 const PORT: number = process.env.PORT ? parseInt(process.env.PORT, 10) : 8080;
+const base_url = 'http://localhost:8080'
 
 app
   .listen(PORT, "localhost", function () {
@@ -16,3 +17,4 @@ app
       console.log(err);
     }
   });
+  app.use(express.static('public'))

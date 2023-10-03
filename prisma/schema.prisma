@@ -17,7 +17,9 @@ model gallery {
   url   String?
   path   String? 
   filename   String? 
-  size   String? 
+  size   Int? 
   header_type   String? 
   file_group   String? 
+  created_at        DateTime           @default(now())
+  updated_at        DateTime? 
 }
