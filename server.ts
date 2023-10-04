@@ -17,4 +17,5 @@ app
       console.log(err);
     }
   });
-  app.use(express.static('public'))
+  /*kena token*/
+  // app.use(express.static('public'))

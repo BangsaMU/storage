@@ -26,7 +26,9 @@ export default class UploadController {
 
             const storage = multer.diskStorage({
                 destination: function (req: Request, file, cb) {
-                    const path_file = req.body.path_file; /*untuk mendapatkan param body semua param harus dikirm seblum file dikirim*/
+                    /*untuk mendapatkan param body semua param harus dikirm seblum file dikirim*/
+                    const path_file = req.query.path_file || req.body.path_file || '';
+                    // const path_file = req.body.path_file; 
                     const uploadPath = path.resolve(path.join(__dirname, '../../../public/uploads/' + path_file));
 
                     if (!fs.existsSync(uploadPath)) {
@@ -108,14 +110,17 @@ export default class UploadController {
                     // const size = req.file?.size;
                     const base_url = 'http://localhost:8080'
 
-                    const path_file = req.query.path_file || req.body.path_file || '';
+                    const user_id = req.query.user_id || req.body.user_id || 0;
+                    const path_file_param = req.query.path_file || req.body.path_file || '';
+                    const path_file = path_file_param != '' ? '/' + path_file_param.replaceAll('\\', '/') + '/' : '/';
+                    const caption = req.query.caption || req.body.caption || file?.originalname;
                     const file_group = req.query.file_group || req.body.file_group || 'image';
                     const prisma = new PrismaClient()
-                    const url = base_url + '/uploads/' + path_file + '/' + file?.originalname
+                    const url = base_url + '/uploads' + path_file + file?.originalname
                     const user = await prisma.gallery.create({
                         data: {
-                            user_id: 0,
-                            caption: file?.originalname,
+                            user_id: parseInt(user_id),
+                            caption: caption,
                             url: url,
                             path: file?.path,
                             filename: file?.originalname,
