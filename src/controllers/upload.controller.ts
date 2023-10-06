@@ -2,9 +2,11 @@ import { Request, Response } from "express";
 import multer from "multer";
 import path from 'path';
 import fs from 'fs';
+// import { unlinkSync } from 'node:fs';
+import { createHash } from "crypto";
 
-import { PrismaClient } from '@prisma/client'
-
+// import { PrismaClient } from '@prisma/client'
+import prisma from '../../DB'
 
 export default class UploadController {
 
@@ -89,7 +91,7 @@ export default class UploadController {
                         }
 
                     } else {
-                        return cb(new Error('Invalid mime type'));
+                        return cb(new Error(file.originalname + ' Invalid mime type: ' + file.mimetype));
                     }
                 }
             })
@@ -115,24 +117,44 @@ export default class UploadController {
                     const path_file = path_file_param != '' ? '/' + path_file_param.replaceAll('\\', '/') + '/' : '/';
                     const caption = req.query.caption || req.body.caption || file?.originalname;
                     const file_group = req.query.file_group || req.body.file_group || 'image';
-                    const prisma = new PrismaClient()
+                    const hash_file = req.query.hash_file || req.body.hash_file || null;
+                    // const prisma = new PrismaClient()
                     const url = base_url + '/uploads' + path_file + file?.originalname
-                    const user = await prisma.gallery.create({
-                        data: {
-                            user_id: parseInt(user_id),
-                            caption: caption,
-                            url: url,
-                            path: file?.path,
-                            filename: file?.originalname,
-                            size: file?.size,
-                            header_type: file?.mimetype,
-                            file_group: file_group,
-                        },
-                    })
-                    console.log('save file', file);
+
+                    /*validate file hash*/
+                    const originalname = file?.originalname || '';
+                    const uploadPath = path.resolve(path.join(__dirname, '../../../public/uploads/' + path_file));
+
+                    const cek_path = file?.path;
+                    const file_upload_tmp = path.join(uploadPath, originalname);
+                    const buff = fs.readFileSync(file_upload_tmp);
+                    const hash = createHash("md5").update(buff).digest("hex");
+                    let upload_status = '';
+                    console.log(file_upload_tmp + "hash_file::" + hash);
+
+                    if (hash == hash_file) {
+                        const user = await prisma.gallery.create({
+                            data: {
+                                user_id: parseInt(user_id),
+                                caption: caption,
+                                url: url,
+                                path: file?.path,
+                                filename: file?.originalname,
+                                size: file?.size,
+                                header_type: file?.mimetype,
+                                file_group: file_group,
+                                hash_file: hash_file,
+                            },
+                        })
+                        console.log('save file', file);
+                        upload_status = 'success';
+                    } else {
+                        upload_status = 'Failed data corupt';
+                        fs.unlinkSync(file_upload_tmp);
+                    }
 
                     res.status(201).json({
-                        message: "Upload success",
+                        message: "Upload " + upload_status,
                         file: file,
                     });
                 }
@@ -151,7 +173,7 @@ export default class UploadController {
 
     async findAll(req: Request, res: Response) {
         try {
-            const prisma = new PrismaClient()
+            // const prisma = new PrismaClient()
             const gallery = await prisma.gallery.findMany()
             res.status(200).json({
                 message: 'success',
@@ -167,7 +189,7 @@ export default class UploadController {
 
     async findOne(req: Request, res: Response) {
         try {
-            const prisma = new PrismaClient()
+            // const prisma = new PrismaClient()
             // By ID
             const gallery = await prisma.gallery.findUnique({
                 where: {

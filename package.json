@@ -8,7 +8,8 @@
     "build": "tsc",
     "dev": "npx nodemon",
     "live": "node ./dist/server.js",
-    "start": "tsc && npm run live"
+    "start": "tsc && npm run live",
+    "production": "pm2 start ./dist/server.js"
   },
   "keywords": [],
   "author": "",
