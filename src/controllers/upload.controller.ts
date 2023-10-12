@@ -13,17 +13,23 @@ export default class UploadController {
     async init(req: Request, res: Response) {
         try {
             res.status(200).json({
+                code: 200,
                 message: "Init OK",
                 reqQuery: req.query
             });
         } catch (err) {
             res.status(500).json({
+                code: 500,
                 message: "Internal Server Error!"
             });
         }
     }
 
     async create(req: Request, res: Response) {
+        let upload_status = '';
+        let code_status = 200;
+        let data_file = req.file;
+        let data_file_lokal_path = '';
         try {
 
             const storage = multer.diskStorage({
@@ -74,6 +80,7 @@ export default class UploadController {
                         var caption = file.fieldname;
                         var filename = file.originalname;
                         var size = file.size;
+                        data_file_lokal_path = filecek;
                         if (fs.existsSync(filecek)) {
                             // {
                             //     fieldname: 'file',
@@ -81,8 +88,9 @@ export default class UploadController {
                             //     encoding: '7bit',
                             //     mimetype: 'image/jpeg'
                             //   }
-                            console.log('file exists', file.originalname);
-
+                            console.log('file exists', file);
+                            code_status = 200;
+                            data_file = file;
                             return cb(new Error('Invalid ' + file.originalname + ' exists'));
 
                         } else {
@@ -91,6 +99,7 @@ export default class UploadController {
                         }
 
                     } else {
+                        code_status = 400;
                         return cb(new Error(file.originalname + ' Invalid mime type: ' + file.mimetype));
                     }
                 }
@@ -101,20 +110,31 @@ export default class UploadController {
 
             uploadSingleImage(req, res, async function (err) {
 
-
                 if (err) {
+                    const gallery = await prisma.gallery.findFirst({
+                        where: {
+                            path: data_file_lokal_path,
+                        },
+                    })
                     res.status(400).json({
+                        code: code_status,
                         message: err.message,
+                        data: gallery,
                     });
                 } else {
-
+                    const gallery = await prisma.gallery.findFirst({
+                        where: {
+                            path: data_file_lokal_path,
+                        },
+                    })
                     const file = req.file;
                     // const size = req.file?.size;
                     const base_url = 'http://localhost:8080'
 
                     const user_id = req.query.user_id || req.body.user_id || 0;
                     const path_file_param = req.query.path_file || req.body.path_file || '';
-                    const path_file = path_file_param != '' ? '/' + path_file_param.replaceAll('\\', '/') + '/' : '/';
+                    let path_file = path_file_param != '' ? '/' + path_file_param.replaceAll('\\', '/') + '/' : '/';
+                    path_file = path_file.replaceAll('//', '/') ;
                     const caption = req.query.caption || req.body.caption || file?.originalname;
                     const file_group = req.query.file_group || req.body.file_group || 'image';
                     const hash_file = req.query.hash_file || req.body.hash_file || null;
@@ -129,33 +149,37 @@ export default class UploadController {
                     const file_upload_tmp = path.join(uploadPath, originalname);
                     const buff = fs.readFileSync(file_upload_tmp);
                     const hash = createHash("md5").update(buff).digest("hex");
-                    let upload_status = '';
                     console.log(file_upload_tmp + "hash_file::" + hash);
+
+                    const data_new = {
+                        user_id: parseInt(user_id),
+                        caption: caption,
+                        url: url,
+                        path: file?.path,
+                        filename: file?.originalname,
+                        size: file?.size,
+                        header_type: file?.mimetype,
+                        file_group: file_group,
+                        hash_file: hash_file,
+                    };
 
                     if (hash == hash_file) {
                         const user = await prisma.gallery.create({
-                            data: {
-                                user_id: parseInt(user_id),
-                                caption: caption,
-                                url: url,
-                                path: file?.path,
-                                filename: file?.originalname,
-                                size: file?.size,
-                                header_type: file?.mimetype,
-                                file_group: file_group,
-                                hash_file: hash_file,
-                            },
+                            data: data_new,
                         })
                         console.log('save file', file);
+                        code_status = 200;
                         upload_status = 'success';
                     } else {
+                        code_status = 400;
                         upload_status = 'Failed data corupt';
                         fs.unlinkSync(file_upload_tmp);
                     }
 
-                    res.status(201).json({
+                    res.status(200).json({
+                        code: code_status,
                         message: "Upload " + upload_status,
-                        file: file,
+                        data: data_new,
                     });
                 }
 
@@ -166,6 +190,7 @@ export default class UploadController {
 
         } catch (err) {
             res.status(500).json({
+                code: 500,
                 message: "Internal Server Error!"
             });
         }
@@ -176,11 +201,13 @@ export default class UploadController {
             // const prisma = new PrismaClient()
             const gallery = await prisma.gallery.findMany()
             res.status(200).json({
+                code: 200,
                 message: 'success',
                 data: gallery
             });
         } catch (err) {
             res.status(500).json({
+                code: 500,
                 message: "Internal Server Error!",
                 data: []
             });
@@ -197,12 +224,14 @@ export default class UploadController {
                 },
             })
             res.status(200).json({
+                code: 200,
                 message: 'success',
                 data: gallery,
                 // reqParamId: req.params.id
             });
         } catch (err) {
             res.status(500).json({
+                code: 500,
                 message: "Internal Server Error!",
                 data: []
             });
@@ -212,12 +241,14 @@ export default class UploadController {
     async update(req: Request, res: Response) {
         try {
             res.status(200).json({
+                code: 200,
                 message: "update OK",
                 reqParamId: req.params.id,
                 reqBody: req.body
             });
         } catch (err) {
             res.status(500).json({
+                code: 500,
                 message: "Internal Server Error!"
             });
         }
@@ -226,11 +257,13 @@ export default class UploadController {
     async delete(req: Request, res: Response) {
         try {
             res.status(200).json({
+                code: 200,
                 message: "delete OK",
                 reqParamId: req.params.id
             });
         } catch (err) {
             res.status(500).json({
+                code: 500,
                 message: "Internal Server Error!"
             });
         }
