@@ -31,15 +31,16 @@ export default class UploadController {
         let data_file = req.file;
         let data_file_lokal_path = '';
         try {
-
+            console.log(req.body.app_code + 'samu cek folder app_code' + req.query.app_code);
             const storage = multer.diskStorage({
                 destination: function (req: Request, file, cb) {
                     /*untuk mendapatkan param body semua param harus dikirm seblum file dikirim*/
                     const path_file = req.query.path_file || req.body.path_file || '';
-                    // const path_file = req.body.path_file; 
-                    const uploadPath = path.resolve(path.join(__dirname, '../../../public/uploads/' + path_file));
+                    const app_code = req.query.app_code || req.body.app_code || '';
+                    const uploadPath = path.resolve(path.join(__dirname, '../../../public/uploads/' + app_code + '/' + path_file));
 
                     if (!fs.existsSync(uploadPath)) {
+                        console.log(app_code + 'buat folder::' + uploadPath);
                         fs.mkdirSync(uploadPath, { recursive: true });
                     }
 
@@ -47,8 +48,10 @@ export default class UploadController {
                 },
                 filename: function (req, file, cb) {
                     console.log("file::", file);
-                    const path_file = req.body.path_file; /*untuk mendapatkan param body semua param harus dikirm seblum file dikirim*/
-                    const uploadPath = path.resolve(path.join(__dirname, '../../../public/uploads/' + path_file));
+                    /*untuk mendapatkan param body semua param harus dikirm seblum file dikirim*/
+                    const path_file = req.query.path_file || req.body.path_file || '';
+                    const app_code = req.query.app_code || req.body.app_code || '';
+                    const uploadPath = path.resolve(path.join(__dirname, '../../../public/uploads/' + app_code + '/' + path_file));
                     // cb(
                     //     null,
                     //     file.originalname
@@ -74,8 +77,10 @@ export default class UploadController {
                 // },
                 fileFilter: async (req, file, cb) => {
                     if (file.mimetype == "image/png" || file.mimetype == "image/jpg" || file.mimetype == "image/jpeg") {
+                        /*untuk mendapatkan param body semua param harus dikirm seblum file dikirim*/
                         const path_file = req.query.path_file || req.body.path_file || '';
-                        const dir = path.resolve(path.join(__dirname, '../../../public/uploads/' + path_file));
+                        const app_code = req.query.app_code || req.body.app_code || '';
+                        const dir = path.resolve(path.join(__dirname, '../../../public/uploads/' + app_code + '/' + path_file));
                         var filecek = dir + '\\' + file.originalname;
                         var caption = file.fieldname;
                         var filename = file.originalname;
@@ -94,7 +99,7 @@ export default class UploadController {
                             return cb(new Error('Invalid ' + file.originalname + ' exists'));
 
                         } else {
-                            console.log('file not found!');
+                            console.log('file not found! ' + filecek);
                             cb(null, true);
                         }
 
@@ -129,21 +134,23 @@ export default class UploadController {
                     })
                     const file = req.file;
                     // const size = req.file?.size;
-                    const base_url = 'http://localhost:8080'
+                    const base_url = process.env.BASE_URL ? process.env.BASE_URL : 'http://localhost:8080';
 
                     const user_id = req.query.user_id || req.body.user_id || 0;
                     const path_file_param = req.query.path_file || req.body.path_file || '';
                     let path_file = path_file_param != '' ? '/' + path_file_param.replaceAll('\\', '/') + '/' : '/';
-                    path_file = path_file.replaceAll('//', '/') ;
+                    path_file = path_file.replaceAll('//', '/');
                     const caption = req.query.caption || req.body.caption || file?.originalname;
                     const file_group = req.query.file_group || req.body.file_group || 'image';
                     const hash_file = req.query.hash_file || req.body.hash_file || null;
                     // const prisma = new PrismaClient()
-                    const url = base_url + '/uploads' + path_file + file?.originalname
 
                     /*validate file hash*/
                     const originalname = file?.originalname || '';
-                    const uploadPath = path.resolve(path.join(__dirname, '../../../public/uploads/' + path_file));
+                    const app_code = req.query.app_code || req.body.app_code || '';
+                    let url = base_url + '/uploads/' + app_code + '/' + path_file + file?.originalname
+                    url = url.replaceAll('//', '/');
+                    const uploadPath = path.resolve(path.join(__dirname, '../../../public/uploads/' + app_code + '/' + path_file));
 
                     const cek_path = file?.path;
                     const file_upload_tmp = path.join(uploadPath, originalname);
