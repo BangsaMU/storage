@@ -76,7 +76,7 @@ export default class UploadController {
                 //     fileSize: 1024 * 1024 * 5
                 // },
                 fileFilter: async (req, file, cb) => {
-                    if (file.mimetype == "image/png" || file.mimetype == "image/jpg" || file.mimetype == "image/jpeg") {
+                    if (file.mimetype == "application/pdf" || file.mimetype == "image/png" || file.mimetype == "image/jpg" || file.mimetype == "image/jpeg") {
                         /*untuk mendapatkan param body semua param harus dikirm seblum file dikirim*/
                         const path_file = req.query.path_file || req.body.path_file || '';
                         const app_code = req.query.app_code || req.body.app_code || '';
